@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from xpc.xpc import XPlaneConnect
+from xpc.main import XPlaneConnect
 import time
 
 class XPlaneILSEnv(gym.Env):
@@ -27,7 +27,7 @@ class XPlaneILSEnv(gym.Env):
 
         # Set initial state near runway (e.g., 3NM final at 3000 ft AGL)
         # Position: lat, lon, altitude_ft
-        init_pos = [37.6188056, -122.3754167, 3000]  # KSFO 28R approximate offset
+        init_pos = [37.542400, -122.276386, 2000]  # KSFO 28R approximate offset
         self.client.sendPOSI([*init_pos, 0, -3, 0])  # heading = 0°, pitch = -3°, roll = 0°
 
         # Trimmed flight controls at reset
@@ -40,8 +40,6 @@ class XPlaneILSEnv(gym.Env):
         return self._get_obs()
 
     def step(self, action):
-        # Pause the sim to apply control inputs
-        self.client.pauseSim(True)
 
         # Clip and scale actions to valid control ranges
         action = np.clip(action, -1, 1)
@@ -49,13 +47,7 @@ class XPlaneILSEnv(gym.Env):
 
         self.ctrl = [aileron, elevator, rudder, throttle]
         self.client.sendCTRL(self.ctrl)
-
-        # Advance sim by self.dt
-        time.sleep(self.dt)
-        self.client.pauseSim(False)
-        time.sleep(self.dt)  # Let it simulate for self.dt duration
-        self.client.pauseSim(True)
-
+        
         obs = self._get_obs()
 
         # Placeholder reward/termination
@@ -77,9 +69,9 @@ class XPlaneILSEnv(gym.Env):
         aoa = self.client.getDREF("sim/flightmodel/position/alpha")[0]
 
         # Define fixed touchdown point (e.g., KSFO 28R threshold)
-        touchdown_lat = 37.615223
-        touchdown_lon = -122.389977
-        touchdown_elev = 13.0  # meters above MSL
+        touchdown_lat = 37.612557
+        touchdown_lon = -122.360427
+        touchdown_elev = 10.0  # meters above MSL
 
         # Compute position error vector (in lat/lon/elev diff)
         pos_error = np.array([
