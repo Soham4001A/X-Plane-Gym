@@ -1,3 +1,6 @@
 gymnasium
 numpy
 torch
+matplotlib
+pandas
+tensorboard
